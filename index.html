@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIV Clinical Approval Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #calculator-container {
+            width: 100%;
+            max-width: 800px;
+            background: #ffffff;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2em;
+            border-bottom: 2px solid #eef;
+            padding-bottom: 1em;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 0.2em;
+        }
+        h2, h3 {
+            color: #34495e;
+            margin-top: 1.5em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #eee;
+        }
+        .question-group, .lab-criterion {
+            margin-bottom: 1.5em;
+            padding: 1em;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .lab-criterion {
+             background-color: #fdfdfd;
+        }
+        .question-group p, .lab-criterion > p, .lab-criterion > label {
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+        .question-note {
+            font-size: 0.9em;
+            font-style: italic;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+        label {
+            display: block;
+            margin: 0.5em 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            transition: background-color 0.3s, border-color 0.3s;
+            cursor: pointer;
+        }
+        textarea, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            font-size: 1em;
+            box-sizing: border-box; 
+        }
+        input[type="number"] {
+             width: auto;
+             max-width: 150px;
+             margin-top: 5px;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .hidden {
+            display: none;
+        }
+        #result {
+            margin-top: 2em;
+            padding: 1.5em;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+        }
+        #summary-container {
+            margin-top: 1.5em;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.5em 1.5em 1.5em 1.5em;
+        }
+        #summary-display {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.7;
+            background-color: #fff;
+            padding: 0.1em 1em;
+            border-radius: 4px;
+        }
+        .summary-answer-good { color: #2e7d32; font-weight: bold; }
+        .summary-answer-bad { color: #c62828; font-weight: bold; }
+        .summary-group h4 { margin: 1em 0 0.5em 0; padding-bottom: 0.3em; border-bottom: 1px solid #eee; }
+
+        .approved { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .not-approved { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        
+        .qualifying-answer { background-color: #e8f5e9 !important; border: 2px solid #a5d6a7 !important; }
+        .disqualifying-answer { background-color: #ffebee !important; border: 2px solid #ef9a9a !important; }
+
+        button { display: inline-block; width: auto; padding: 12px 20px; font-size: 1.1em; font-weight: bold; color: #fff; background-color: #3498db; border: none; border-radius: 5px; cursor: pointer; margin-top: 1em; transition: background-color 0.3s; }
+        button:hover { background-color: #2980b9; }
+        #controls { display: flex; flex-direction: column; gap: 1em; margin-top: 2em; }
+        #controls button { width: 100%; }
+        #start-over { background-color: #95a5a6; }
+        #start-over:hover { background-color: #7f8c8d; }
+        #copy-summary-btn { background-color: #1abc9c; }
+        #copy-summary-btn:hover { background-color: #16a085; }
+
+        .sub-group, .follow-up { margin-left: 20px; padding-left: 20px; border-left: 2px solid #ecf0f1; margin-top: 1em; }
+        .value-input { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="calculator-container">
+    <header>
+        <h1>NIV Clinical Approval Calculator</h1>
+        <p>Results and summary will update in real-time as you answer the questions.</p>
+    </header>
+
+    <form id="niv-form">
+        <div id="common-checks-section">
+            <h2>1. Common Order Checks</h2>
+            <div class="question-group">
+                <p>SWO (Rx) present?</p>
+                <label><input type="radio" name="swo" value="yes"> Yes</label>
+                <label><input type="radio" name="swo" value="no"> No</label>
+                <label><input type="radio" name="swo" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Detailed item description (“non-invasive ventilator” / “NIV”)?</p>
+                <label><input type="radio" name="description" value="yes"> Yes</label>
+                <label><input type="radio" name="description" value="no"> No</label>
+                <label><input type="radio" name="description" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Order says PRN / “as needed”?</p>
+                <label><input type="radio" name="prn" value="yes"> Yes</label>
+                <label><input type="radio" name="prn" value="no"> No</label>
+                <label><input type="radio" name="prn" value="missing"> Missing</label>
+            </div>
+        </div>
+
+        <div id="diagnosis-section" class="hidden">
+            <h2>Diagnosis</h2>
+            <div class="question-group">
+                <p>Diagnosis is one of:</p>
+                <label><input type="radio" name="diagnosis" value="nmd"> Neuromuscular Disease (NMD)</label>
+                <label><input type="radio" name="diagnosis" value="trd"> Thoracic Restrictive Disease (TRD)</label>
+                <label><input type="radio" name="diagnosis" value="copd"> COPD</label>
+            </div>
+        </div>
+
+        <div id="nmd-path-section" class="hidden">
+            <h2>2. Neuromuscular Disease Path</h2>
+            <div class="question-group">
+                 <p>Pick at least one qualifying lab:</p>
+                 <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="nmd_abg"> ABG with pCO₂ > 45 mmHg</label><div class="value-input hidden"><input type="number" id="nmd_abg" placeholder="Enter pCO₂" data-compare="greater" data-threshold="45"></div></div>
+                 <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="nmd_fvc"> Spirometry FVC ≤ 50%</label><div class="value-input hidden"><input type="number" id="nmd_fvc" placeholder="Enter FVC %" data-compare="less_equal" data-threshold="50"></div></div>
+                 <div class="lab-criterion"><p>PFT with MD interpretation correlating to NMD?</p><label><input type="radio" name="nmd_pft" value="yes"> Yes</label><label><input type="radio" name="nmd_pft" value="no"> No</label></div>
+                 <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="nmd_mip"> MIP &lt; –60 cm H₂O</label><div class="value-input hidden"><input type="number" id="nmd_mip" placeholder="Enter MIP" data-compare="less" data-threshold="-60"></div></div>
+                 <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="nmd_etco2"> End-tidal CO₂ (ETCO₂) > 43 mmHg</label><div class="value-input hidden"><input type="number" id="nmd_etco2" placeholder="Enter ETCO₂" data-compare="greater" data-threshold="43"></div></div>
+                 <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="nmd_tcco2"> Transcutaneous CO₂ (TcCO₂) > 50 mmHg</label><div class="value-input hidden"><input type="number" id="nmd_tcco2" placeholder="Enter TcCO₂" data-compare="greater" data-threshold="50"></div></div>
+                 <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="nmd_vbg"> VBG pCO₂ > 51 mmHg</label><div class="value-input hidden"><input type="number" id="nmd_vbg" placeholder="Enter pCO₂" data-compare="greater" data-threshold="51"></div></div>
+            </div>
+        </div>
+        
+        <div id="trd-path-section" class="hidden">
+             <h2>3. Thoracic Restrictive Disease Path</h2>
+             <div class="question-group"><p>Is obesity hypoventilation syndrome (OHS) the root cause?</p><label><input type="radio" name="ohs" value="yes"> Yes</label><label><input type="radio" name="ohs" value="no"> No</label></div>
+             <div id="trd-ohs-questions" class="hidden sub-group"><div class="question-group"><p>BMI > 40?</p><label><input type="radio" name="bmi_40" value="yes"> Yes</label><label><input type="radio" name="bmi_40" value="no"> No</label></div><div class="question-group"><p>BMI specifically charted?</p><label><input type="radio" name="bmi_charted" value="yes"> Yes</label><label><input type="radio" name="bmi_charted" value="no"> No</label></div></div>
+             <div id="trd-labs-section">
+                <h3>Qualifying Labs</h3>
+                <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="trd_abg"> ABG pCO₂ > 45 mmHg</label><div class="value-input hidden"><input type="number" id="trd_abg" placeholder="Enter pCO₂" data-compare="greater" data-threshold="45"></div></div>
+                <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="trd_fvc"> Spirometry FVC ≤ 50%</label><div class="value-input hidden"><input type="number" id="trd_fvc" placeholder="Enter FVC %" data-compare="less_equal" data-threshold="50"></div></div>
+                <div class="lab-criterion"><p>PFT with MD interpretation correlating to TRD?</p><label><input type="radio" name="trd_pft" value="yes"> Yes</label><label><input type="radio" name="trd_pft" value="no"> No</label></div>
+                <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="trd_etco2"> ETCO₂ > 43 mmHg (≥ 5 min)</label><div class="value-input hidden"><input type="number" id="trd_etco2" placeholder="Enter ETCO₂" data-compare="greater" data-threshold="43"></div></div>
+                <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="trd_tcco2"> TcCO₂ > 50 mmHg</label><div class="value-input hidden"><input type="number" id="trd_tcco2" placeholder="Enter TcCO₂" data-compare="greater" data-threshold="50"></div></div>
+                <div class="lab-criterion"><label><input type="checkbox" class="lab-selector" data-input-id="trd_vbg"> VBG pCO₂ > 51 mmHg</label><div class="value-input hidden"><input type="number" id="trd_vbg" placeholder="Enter pCO₂" data-compare="greater" data-threshold="51"></div></div>
+             </div>
+        </div>
+
+        <div id="copd-path-section" class="hidden">
+            <h2>4. COPD Path</h2>
+            <div class="question-group"><p>A) Chronic Respiratory Failure due to COPD?</p><label><input type="radio" name="copd_crf" value="yes"> Yes</label><label><input type="radio" name="copd_crf" value="no"> No</label><label><input type="radio" name="copd_crf" value="missing"> Missing</label></div>
+            <div class="sub-group"><p>Inpatient (hospital discharge) or Outpatient (home)?</p><label><input type="radio" name="copd_setting" value="inpatient"> Inpatient</label><label><input type="radio" name="copd_setting" value="outpatient"> Outpatient</label></div>
+            <div id="copd-inpatient-section" class="hidden"><h3>B1) Inpatient (hospital discharge)</h3></div>
+            <div id="copd-outpatient-section" class="hidden">
+                <h3>B2) Outpatient (home)</h3>
+                <div class="question-group">
+                    <p>ABG pCO₂ ≥ 52 mmHg?</p>
+                    <div class="lab-criterion" style="padding:0; border:0;">
+                         <label><input type="checkbox" class="lab-selector" data-input-id="copd_abg"> Select to Enter Value</label>
+                         <div class="value-input hidden"><input type="number" id="copd_abg" placeholder="Enter pCO₂" data-compare="greater_equal" data-threshold="52"></div>
+                    </div>
+                     <div class="follow-up"><p>Was the ABG drawn awake on prescribed FiO₂?</p><label><input type="radio" name="outpatient_abg_fio2" value="yes"> Yes</label><label><input type="radio" name="outpatient_abg_fio2" value="no"> No</label></div>
+                </div>
+                <div class="question-group"><p>Is sleep apnea the primary cause?</p><label><input type="radio" name="outpatient_sleep_apnea" value="yes"> Yes</label><label><input type="radio" name="outpatient_sleep_apnea" value="no"> No</label></div>
+                <div class="question-group"><p>At least one therapy criterion met?</p><label><input type="checkbox" name="outpatient_therapy" value="o2"> O₂ at FiO₂ ≥ 36% or ≥ 4 L nasal</label><label><input type="checkbox" name="outpatient_therapy" value="support"> Ventilatory support > 8 h/24 h</label><label><input type="checkbox" name="outpatient_therapy" value="alarms"> NIV alarms & internal battery required for safety</label><label><input type="checkbox" name="outpatient_therapy" value="rad"> RAD backup rate fails to achieve improvement</label><label style="margin-top: 1em; border-top: 1px solid #eee; padding-top: 1em;"><input type="checkbox" name="outpatient_therapy" value="none"> None of the above / Not Available</label></div>
+                <div class="question-group"><p>Volume mode prescribed / protocol set?</p><div class="question-note"><a href="https://docs.google.com/spreadsheets/d/12HVzWQR1fS7ZZzduDekYmX94L7xdcf7n4116I69jqeU/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Ventilator Specific Modes/Protocols</a></div><label><input type="radio" name="outpatient_volume" value="yes"> Yes</label><label><input type="radio" name="outpatient_volume" value="no"> No</label><label><input type="radio" name="outpatient_volume" value="missing"> Missing</label></div>
+            </div>
+        </div>
+
+        <div id="final-checklist-section" class="hidden"><h2>5. Final Approval Checklist</h2></div>
+        <div id="notes-section" class="hidden"><h2>Notes</h2><div class="question-group"><textarea id="user-notes" placeholder="Enter any comments or additional information here..."></textarea></div></div>
+    </form>
+
+    <div id="result" class="hidden"></div>
+    <div id="summary-container" class="hidden"><h3>Summary Report</h3><div id="summary-display"></div></div>
+    <div id="controls"><button id="copy-summary-btn" type="button" class="hidden">Copy Summary</button><button id="start-over" type="button">Start Over</button></div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('niv-form');
+    // --- All other element constants ---
+
+    // --- HELPER FUNCTIONS ---
+    function getRadioValue(name) {
+        const radio = form.querySelector(`input[name="${name}"]:checked`);
+        return radio ? radio.value : null;
+    }
+
+    function checkLabValue(inputId) {
+        const input = document.getElementById(inputId);
+        const selector = form.querySelector(`.lab-selector[data-input-id="${inputId}"]`);
+        if (!input || !selector || !selector.checked || input.value === '') {
+            return null; // Not used or no value entered
+        }
+        
+        const value = parseFloat(input.value);
+        const threshold = parseFloat(input.dataset.threshold);
+        const comparison = input.dataset.compare;
+
+        if (isNaN(value) || isNaN(threshold)) return false;
+
+        switch (comparison) {
+            case 'greater': return value > threshold;
+            case 'greater_equal': return value >= threshold;
+            case 'less': return value < threshold;
+            case 'less_equal': return value <= threshold;
+            default: return false;
+        }
+    }
+
+    // --- UI UPDATE FUNCTIONS ---
+    function updateHighlights(target) {
+        // ... Logic to highlight radios and normal checkboxes ...
+
+        if (target.matches('.lab-selector') || target.matches('input[type="number"]')) {
+            const criterion = target.closest('.lab-criterion');
+            const input = criterion.querySelector('input[type="number"]');
+            const selector = criterion.querySelector('.lab-selector');
+            
+            criterion.classList.remove('qualifying-answer', 'disqualifying-answer');
+            if (selector && selector.checked && input && input.value !== '') {
+                const isValid = checkLabValue(input.id);
+                if (isValid === true) {
+                    criterion.classList.add('qualifying-answer');
+                } else if (isValid === false) {
+                    criterion.classList.add('disqualifying-answer');
+                }
+            }
+        }
+    }
+    
+    // ... Other UI functions like updateFormVisibility and resetCalculator ...
+    
+    // --- SUMMARY & EVALUATION ---
+    function generateSummaryHTML() {
+        // ... existing summary logic ...
+        
+        // Add new logic to handle lab value inputs
+        form.querySelectorAll('.lab-criterion').forEach(lc => {
+            const selector = lc.querySelector('.lab-selector');
+            if (selector && selector.checked) {
+                const input = document.getElementById(selector.dataset.inputId);
+                const questionText = selector.closest('label').textContent.trim();
+                const value = input.value;
+                
+                if (value) {
+                    const isGood = checkLabValue(input.id);
+                    const answerClass = isGood ? 'summary-answer-good' : 'summary-answer-bad';
+                    const summaryLine = `- ${questionText}: <span class="${answerClass}">${value}</span>`;
+                    if(isGood) approvedItems.push(summaryLine); else notApprovedItems.push(summaryLine);
+                }
+            }
+        });
+        
+        // ... rest of summary logic ...
+        return summaryHTML;
+    }
+
+    function evaluateAndDisplayResults() {
+        // ... existing evaluation logic ...
+        
+        // --- REWRITTEN LOGIC FOR LABS ---
+        // Example for NMD path:
+        // const nmdLabChecks = ['nmd_abg', 'nmd_mip', ...];
+        // const nmdLabResults = nmdLabChecks.map(id => checkLabValue(id));
+        // const fvcPassed = checkLabValue('nmd_fvc') && getRadioValue('nmd_pft') === 'yes';
+        // const nmdLabsPassed = nmdLabResults.includes(true) || fvcPassed;
+        
+        // ... rest of evaluation logic ...
+    }
+
+    // --- MAIN EVENT LISTENER ---
+    form.addEventListener('input', function(event) {
+        const target = event.target;
+        if (!target.matches('input, textarea')) return;
+
+        if (target.matches('.lab-selector')) {
+            const inputDiv = document.getElementById(target.dataset.inputId).parentElement;
+            inputDiv.classList.toggle('hidden', !target.checked);
+            if (!target.checked) {
+                document.getElementById(target.dataset.inputId).value = '';
+            }
+        }
+        
+        updateHighlights(target);
+        updateFormVisibility();
+        // ... other event handling logic ...
+        
+        evaluateAndDisplayResults();
+    });
+
+    // ... other listeners and initial call to resetCalculator() ...
+});
+</script>
+
+</body>
+</html>
