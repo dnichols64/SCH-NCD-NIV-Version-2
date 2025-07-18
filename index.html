@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIV Clinical Approval Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .question-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .question-group p {
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+        label {
+            display: block;
+            margin: 8px 0;
+            padding: 5px;
+            cursor: pointer;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            margin-left: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        #calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        #calculate-btn:hover {
+            background-color: #229954;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+            border: 2px solid #3498db;
+        }
+        .approved { color: #27ae60; font-weight: bold; }
+        .not-approved { color: #e74c3c; font-weight: bold; }
+        .hidden { display: none; }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .button-group button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #copy-btn {
+            background-color: #1abc9c;
+            color: white;
+        }
+        #reset-btn {
+            background-color: #95a5a6;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NIV Clinical Approval Calculator</h1>
+        <p style="text-align: center; color: #666;">Fill out the form and click "Calculate Results" to see all pathway approvals.</p>
+
+        <form id="calculator-form">
+            <h2>1. Basic Requirements</h2>
+            
+            <div class="question-group">
+                <p>SWO (Prescription) present?</p>
+                <label><input type="radio" name="swo" value="yes"> Yes</label>
+                <label><input type="radio" name="swo" value="no"> No</label>
+            </div>
+
+            <div class="question-group">
+                <p>Detailed item description ("non-invasive ventilator" / "NIV")?</p>
+                <label><input type="radio" name="description" value="yes"> Yes</label>
+                <label><input type="radio" name="description" value="no"> No</label>
+            </div>
+
+            <div class="question-group">
+                <p>Order says PRN / "as needed"?</p>
+                <label><input type="radio" name="prn" value="yes"> Yes</label>
+                <label><input type="radio" name="prn" value="no"> No</label>
+            </div>
+
+            <h2>2. Diagnosis</h2>
+            
+            <div class="question-group">
+                <p>Patient diagnoses (select all that apply):</p>
+                <label><input type="checkbox" name="diagnosis" value="copd"> COPD</label>
+                <label><input type="checkbox" name="diagnosis" value="nmd"> Neuromuscular Disease (NMD)</label>
+                <label><input type="checkbox" name="diagnosis" value="rtd"> Restrictive Thoracic Disorder (RTD)</label>
+                <label><input type="checkbox" name="diagnosis" value="ohs"> Obesity Hypoventilation Syndrome (OHS)</label>
+            </div>
+
+            <h2>3. Lab Values</h2>
+            
+            <div class="question-group">
+                <p>Arterial Blood Gas (ABG) pCO₂:</p>
+                <label>
+                    <input type="radio" name="has_abg" value="yes"> Yes - Enter value: 
+                    <input type="number" name="abg_value" step="0.1" min="0"> mmHg
+                </label>
+                <label><input type="radio" name="has_abg" value="no"> No ABG available</label>
+            </div>
+
+            <div class="question-group">
+                <p>Spirometry FVC (%):</p>
+                <label>
+                    <input type="radio" name="has_fvc" value="yes"> Yes - Enter value: 
+                    <input type="number" name="fvc_value" step="0.1" min="0" max="100"> %
+                </label>
+                <label><input type="radio" name="has_fvc" value="no"> No spirometry available</label>
+            </div>
+
+            <div class="question-group">
+                <p>Max Inspiratory Pressure (MIP):</p>
+                <label>
+                    <input type="radio" name="has_mip" value="yes"> Yes - Enter value: 
+                    <input type="number" name="mip_value" step="0.1" max="0"> cm H₂O
+                </label>
+                <label><input type="radio" name="has_mip" value="no"> No MIP available</label>
+            </div>
+
+            <h2>4. Clinical Context</h2>
+            
+            <div class="question-group">
+                <p>Chart supports need for ventilator therapy?</p>
+                <label><input type="radio" name="chart_support" value="yes"> Yes</label>
+                <label><input type="radio" name="chart_support" value="no"> No</label>
+            </div>
+
+            <div class="question-group">
+                <p>Patient needs exceed what a RAD can deliver?</p>
+                <label><input type="radio" name="exceeds_rad" value="yes"> Yes</label>
+                <label><input type="radio" name="exceeds_rad" value="no"> No</label>
+            </div>
+
+            <h2>5. Notes</h2>
+            
+            <div class="question-group">
+                <p>Additional notes:</p>
+                <textarea name="notes" placeholder="Enter any additional notes here..."></textarea>
+            </div>
+
+            <button type="button" id="calculate-btn">📊 Calculate Results</button>
+        </form>
+
+        <div id="results" class="results hidden">
+            <h2>Results Summary</h2>
+            <div id="results-content"></div>
+            
+            <div class="button-group">
+                <button type="button" id="copy-btn">Copy Summary</button>
+                <button type="button" id="reset-btn">Start Over</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('calculator-form');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('results-content');
+            const copyBtn = document.getElementById('copy-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            function getFormValue(name) {
+                const checked = form.querySelector(`input[name="${name}"]:checked`);
+                return checked ? checked.value : null;
+            }
+
+            function getNumericValue(name) {
+                const input = form.querySelector(`input[name="${name}"]`);
+                const val = input ? parseFloat(input.value) : null;
+                return isNaN(val) ? null : val;
+            }
+
+            function getDiagnoses() {
+                const checkboxes = form.querySelectorAll('input[name="diagnosis"]:checked');
+                return Array.from(checkboxes).map(cb => cb.value);
+            }
+
+            function evaluatePathways() {
+                // Get basic requirements
+                const hasSWO = getFormValue('swo') === 'yes';
+                const hasDescription = getFormValue('description') === 'yes';
+                const notPRN = getFormValue('prn') === 'no';
+                const basicReqsMet = hasSWO && hasDescription && notPRN;
+
+                // Get clinical context
+                const chartSupport = getFormValue('chart_support') === 'yes';
+                const exceedsRAD = getFormValue('exceeds_rad') === 'yes';
+                const clinicalMet = chartSupport && exceedsRAD;
+
+                // Get lab values
+                const abgValue = getNumericValue('abg_value');
+                const fvcValue = getNumericValue('fvc_value');
+                const mipValue = getNumericValue('mip_value');
+
+                // Check qualifying labs
+                const hasQualifyingABG = abgValue !== null && abgValue > 45;
+                const hasQualifyingFVC = fvcValue !== null && fvcValue <= 50;
+                const hasQualifyingMIP = mipValue !== null && mipValue < -60;
+                const hasQualifyingLab = hasQualifyingABG || hasQualifyingFVC || hasQualifyingMIP;
+
+                // Get diagnoses
+                const diagnoses = getDiagnoses();
+
+                // Evaluate each pathway
+                const results = {};
+                
+                if (diagnoses.includes('nmd')) {
+                    results.NMD = basicReqsMet && clinicalMet && hasQualifyingLab;
+                }
+                
+                if (diagnoses.includes('rtd')) {
+                    results.RTD = basicReqsMet && clinicalMet && hasQualifyingLab;
+                }
+                
+                if (diagnoses.includes('copd')) {
+                    const hasHighABG = abgValue !== null && abgValue >= 52;
+                    results.COPD = basicReqsMet && clinicalMet && hasHighABG;
+                }
+                
+                if (diagnoses.includes('ohs')) {
+                    const hasModerateABG = abgValue !== null && abgValue >= 45;
+                    results.OHS = basicReqsMet && clinicalMet && hasModerateABG;
+                }
+
+                return {
+                    results,
+                    details: {
+                        basicReqsMet,
+                        clinicalMet,
+                        hasQualifyingLab,
+                        labValues: { abgValue, fvcValue, mipValue }
+                    }
+                };
+            }
+
+            function displayResults() {
+                const evaluation = evaluatePathways();
+                const { results, details } = evaluation;
+
+                let html = '<h3>Pathway Approvals:</h3>';
+                
+                if (Object.keys(results).length === 0) {
+                    html += '<p style="color: #e74c3c;">⚠️ No diagnoses selected. Please select at least one diagnosis.</p>';
+                } else {
+                    for (const [pathway, approved] of Object.entries(results)) {
+                        const status = approved ? 'APPROVED' : 'NOT APPROVED';
+                        const className = approved ? 'approved' : 'not-approved';
+                        html += `<p>• <strong>${pathway}:</strong> <span class="${className}">${status}</span></p>`;
+                    }
+                }
+
+                html += '<hr><h3>Requirements Check:</h3>';
+                html += `<p>• Basic Requirements: <span class="${details.basicReqsMet ? 'approved' : 'not-approved'}">${details.basicReqsMet ? 'MET' : 'NOT MET'}</span></p>`;
+                html += `<p>• Clinical Context: <span class="${details.clinicalMet ? 'approved' : 'not-approved'}">${details.clinicalMet ? 'MET' : 'NOT MET'}</span></p>`;
+                html += `<p>• Qualifying Lab Values: <span class="${details.hasQualifyingLab ? 'approved' : 'not-approved'}">${details.hasQualifyingLab ? 'MET' : 'NOT MET'}</span></p>`;
+
+                if (details.labValues.abgValue !== null) {
+                    html += `<p>• ABG pCO₂: ${details.labValues.abgValue} mmHg</p>`;
+                }
+                if (details.labValues.fvcValue !== null) {
+                    html += `<p>• FVC: ${details.labValues.fvcValue}%</p>`;
+                }
+                if (details.labValues.mipValue !== null) {
+                    html += `<p>• MIP: ${details.labValues.mipValue} cm H₂O</p>`;
+                }
+
+                // Add notes if present
+                const notes = form.querySelector('textarea[name="notes"]').value.trim();
+                if (notes) {
+                    html += '<hr><h3>Notes:</h3>';
+                    html += `<p style="background: #f8f9fa; padding: 10px; border-radius: 4px;">${notes}</p>`;
+                }
+
+                resultsContent.innerHTML = html;
+                resultsDiv.classList.remove('hidden');
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            function generateSummaryText() {
+                const evaluation = evaluatePathways();
+                const { results } = evaluation;
+                
+                let text = 'NIV CLINICAL APPROVAL CALCULATOR - RESULTS\n';
+                text += '='.repeat(45) + '\n\n';
+                
+                text += 'PATHWAY APPROVALS:\n';
+                for (const [pathway, approved] of Object.entries(results)) {
+                    text += `• ${pathway}: ${approved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+                }
+                
+                const notes = form.querySelector('textarea[name="notes"]').value.trim();
+                if (notes) {
+                    text += '\nNOTES:\n' + notes + '\n';
+                }
+                
+                text += '\n' + '='.repeat(45);
+                return text;
+            }
+
+            // Event listeners
+            calculateBtn.addEventListener('click', function() {
+                calculateBtn.textContent = '⏳ Calculating...';
+                setTimeout(() => {
+                    displayResults();
+                    calculateBtn.textContent = '📊 Calculate Results';
+                }, 300);
+            });
+
+            copyBtn.addEventListener('click', function() {
+                const summaryText = generateSummaryText();
+                navigator.clipboard.writeText(summaryText).then(() => {
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copy Summary';
+                    }, 2000);
+                });
+            });
+
+            resetBtn.addEventListener('click', function() {
+                form.reset();
+                resultsDiv.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
