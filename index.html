@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIV Clinical Approval Calculator v59</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        #calculator-container {
+            width: 100%;
+            max-width: 800px;
+            background: #ffffff;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2em;
+            border-bottom: 2px solid #eef;
+            padding-bottom: 1em;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 0.2em;
+        }
+        h2, h3, h4 {
+            color: #34495e;
+            margin-top: 1.5em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #eee;
+        }
+        .question-group {
+            margin-bottom: 1.5em;
+            padding: 1em;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .question-group > p {
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+        label {
+            display: block;
+            margin: 0.5em 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            transition: background-color 0.3s, border-color 0.3s;
+            cursor: pointer;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            width: 100px;
+            padding: 5px 10px;
+            margin-left: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 0.95em;
+        }
+        .lab-value-input {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .lab-value-input label {
+            margin: 0; padding: 0; border: none; font-weight: normal;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            font-size: 0.95em;
+            box-sizing: border-box;
+        }
+        .hidden { display: none; }
+
+        #summary-container {
+            margin-top: 2em;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.5em 1.5em 1.5em 1.5em;
+        }
+        #summary-display {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.7;
+            background-color: #fff;
+            padding: 1em;
+            border-radius: 4px;
+        }
+        .summary-display-group { margin-bottom: 1.5em; }
+        .summary-display-group h4 { margin: 0 0 0.5em 0; font-size: 1.2em; }
+        .summary-display-group ul { list-style-type: none; padding-left: 10px; margin: 0; }
+        .summary-display-group li { padding: 0.2em 0; }
+        .summary-display-group .summary-sub-header { font-weight: bold; margin-top: 1em; }
+
+        .summary-answer-good, .value-approved { color: #2e7d32; font-weight: bold; }
+        .summary-answer-bad, .value-not-approved { color: #c62828; font-weight: bold; }
+
+        .snapshot-container {
+            background-color: #e3f2fd;
+            border: 2px solid #1976d2;
+            border-radius: 8px;
+            padding: 1em;
+            margin-bottom: 2em;
+        }
+        .snapshot-disease {
+            margin-bottom: 1em;
+        }
+        .snapshot-disease h5 {
+            margin: 0 0 0.5em 0;
+            color: #1976d2;
+            font-size: 1.1em;
+        }
+        .snapshot-device {
+            margin-left: 1em;
+            font-size: 0.9em;
+        }
+        .snapshot-approved {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .snapshot-not-approved {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        button { 
+            display: inline-block; 
+            width: auto; 
+            padding: 12px 20px; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            color: #fff; 
+            background-color: #3498db; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 1em; 
+            transition: background-color 0.3s; 
+        }
+        button:hover { background-color: #2980b9; }
+        #controls { display: flex; flex-direction: column; gap: 1em; margin-top: 2em; }
+        #controls button { width: 100%; }
+        #calculate-btn { background-color: #27ae60; font-size: 1.2em; padding: 15px 20px; }
+        #calculate-btn:hover { background-color: #229954; }
+        #start-over { background-color: #95a5a6; }
+        #start-over:hover { background-color: #7f8c8d; }
+        #copy-summary-btn { background-color: #1abc9c; }
+        #copy-summary-btn:hover { background-color: #16a085; }
+
+        .sub-group, .follow-up { margin-left: 20px; padding-left: 20px; border-left: 2px solid #ecf0f1; margin-top: 1em; }
+        
+        .version-info {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 0.8em;
+            color: #666;
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            #calculator-container {
+                padding: 1em;
+                margin: 0 auto;
+            }
+            .version-info {
+                position: static;
+                display: block;
+                text-align: center;
+                margin-bottom: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #calculator-container {
+                padding: 0.5em;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="version-info">v59</div>
+
+<div id="calculator-container">
+    <header>
+        <h1>NIV Clinical Approval Calculator</h1>
+        <p>Complete all relevant sections and click "Calculate Results" for comprehensive pathway evaluation.</p>
+    </header>
+
+    <form id="niv-form">
+        <div id="common-checks-section">
+            <h2>1. Common Order Checks</h2>
+            <div class="question-group">
+                <p>SWO (Rx) present?</p>
+                <label><input type="radio" name="swo" value="yes"> Yes</label>
+                <label><input type="radio" name="swo" value="no"> No</label>
+                <label><input type="radio" name="swo" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Detailed item description ("non-invasive ventilator" / "NIV")?</p>
+                <label><input type="radio" name="description" value="yes"> Yes</label>
+                <label><input type="radio" name="description" value="no"> No</label>
+                <label><input type="radio" name="description" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Order says PRN / "as needed"?</p>
+                <label><input type="radio" name="prn" value="yes"> Yes</label>
+                <label><input type="radio" name="prn" value="no"> No</label>
+                <label><input type="radio" name="prn" value="missing"> Missing</label>
+            </div>
+        </div>
+
+        <div id="diagnosis-section">
+            <h2>2. Diagnosis</h2>
+            <div class="question-group">
+                <p>Does the patient have a Chronic Obstructive Pulmonary Disease (COPD) diagnosis?</p>
+                <label><input type="radio" name="has_copd" value="yes"> Yes</label>
+                <label><input type="radio" name="has_copd" value="no"> No</label>
+            </div>
+            <div class="question-group">
+                <p>Does the patient have a Neuromuscular Disease (NMD) diagnosis?</p>
+                <label><input type="radio" name="has_nmd" value="yes"> Yes</label>
+                <label><input type="radio" name="has_nmd" value="no"> No</label>
+            </div>
+            <div class="question-group">
+                <p>Does the patient have a Restrictive Thoracic Disorder (RTD) diagnosis?</p>
+                <label><input type="radio" name="has_rtd" value="yes"> Yes</label>
+                <label><input type="radio" name="has_rtd" value="no"> No</label>
+            </div>
+            <div class="question-group">
+                <p>Does the patient have an Obesity Hypoventilation Syndrome (OHS) diagnosis?</p>
+                <label><input type="radio" name="has_ohs" value="yes"> Yes</label>
+                <label><input type="radio" name="has_ohs" value="no"> No</label>
+            </div>
+        </div>
+
+        <div id="copd-specific-questions-section">
+            <h3>COPD-Specific Criteria</h3>
+            <div class="question-group">
+                <p>Is there evidence of Chronic Respiratory Failure due to COPD?</p>
+                <label><input type="radio" name="copd_crf" value="yes"> Yes</label>
+                <label><input type="radio" name="copd_crf" value="no"> No</label>
+                <label><input type="radio" name="copd_crf" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Setting:</p>
+                <label><input type="radio" name="copd_setting" value="inpatient"> Inpatient (hospital discharge)</label>
+                <label><input type="radio" name="copd_setting" value="outpatient"> Outpatient (home)</label>
+            </div>
+            <div class="question-group">
+                <p>Needed capabilities beyond a RAD during stay?</p>
+                <label><input type="radio" name="inpatient_rad" value="yes"> Yes</label>
+                <label><input type="radio" name="inpatient_rad" value="no"> No</label>
+                <label><input type="radio" name="inpatient_rad" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Used ventilator/RAD in 24h pre-discharge?</p>
+                <label><input type="radio" name="inpatient_used" value="yes"> Yes</label>
+                <label><input type="radio" name="inpatient_used" value="no"> No</label>
+                <label><input type="radio" name="inpatient_used" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Risk of rapid symptom exacerbation?</p>
+                <label><input type="radio" name="inpatient_risk" value="yes"> Yes</label>
+                <label><input type="radio" name="inpatient_risk" value="no"> No</label>
+                <label><input type="radio" name="inpatient_risk" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Is sleep apnea the primary cause of respiratory failure?</p>
+                <label><input type="radio" name="outpatient_sleep_apnea" value="yes"> Yes</label>
+                <label><input type="radio" name="outpatient_sleep_apnea" value="no"> No</label>
+                <label><input type="radio" name="outpatient_sleep_apnea" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Therapy criteria met (select all that apply):</p>
+                <label><input type="checkbox" name="outpatient_therapy" value="o2"> O₂ at FiO₂ ≥ 36% or ≥ 4 L nasal</label>
+                <label><input type="checkbox" name="outpatient_therapy" value="support"> Ventilatory support > 8 h/24 h</label>
+                <label><input type="checkbox" name="outpatient_therapy" value="alarms"> NIV alarms & internal battery required</label>
+                <label><input type="checkbox" name="outpatient_therapy" value="rad"> RAD backup rate fails to achieve improvement</label>
+            </div>
+            <div class="question-group">
+                <p>Does patient have acute on chronic respiratory failure?</p>
+                <label><input type="radio" name="acute_chronic_rf" value="yes"> Yes</label>
+                <label><input type="radio" name="acute_chronic_rf" value="no"> No</label>
+                <label><input type="radio" name="acute_chronic_rf" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Did patient require RAD/ventilator in 24h pre-discharge?</p>
+                <label><input type="radio" name="required_rad_predischarge" value="yes"> Yes</label>
+                <label><input type="radio" name="required_rad_predischarge" value="no"> No</label>
+                <label><input type="radio" name="required_rad_predischarge" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Is patient at risk of rapid symptom exacerbation/rise in PaCO₂?</p>
+                <label><input type="radio" name="risk_exacerbation" value="yes"> Yes</label>
+                <label><input type="radio" name="risk_exacerbation" value="no"> No</label>
+                <label><input type="radio" name="risk_exacerbation" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Patient characteristics for E0471 (RAD with Backup):</p>
+                <label><input type="radio" name="patient_characteristics" value="stable"> Stable COPD</label>
+                <label><input type="radio" name="patient_characteristics" value="post_hospital"> Post-hospitalization</label>
+                <label><input type="radio" name="patient_characteristics" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Can patient tolerate high-intensity NIV (IPAP ≥15 cm H₂O, backup rate ≥14 bpm)?</p>
+                <label><input type="radio" name="tolerate_high_intensity" value="yes"> Yes</label>
+                <label><input type="radio" name="tolerate_high_intensity" value="no"> No</label>
+                <label><input type="radio" name="tolerate_high_intensity" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Is backup rate medically inappropriate for this patient?</p>
+                <label><input type="radio" name="backup_inappropriate" value="yes"> Yes</label>
+                <label><input type="radio" name="backup_inappropriate" value="no"> No</label>
+                <label><input type="radio" name="backup_inappropriate" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>For COPD/CRF patients: Is BiPAP ST mode ordered as primary setting?</p>
+                <label><input type="radio" name="bipap_st_mode" value="yes"> Yes (Not acceptable for Current Guidelines)</label>
+                <label><input type="radio" name="bipap_st_mode" value="no"> No</label>
+                <label><input type="radio" name="bipap_st_mode" value="missing"> Missing</label>
+            </div>
+        </div>
+
+        <div id="pap-specific-questions-section">
+            <h3>PAP Device Specific Questions</h3>
+            <div class="question-group">
+                <p>Is the patient already using an E0470 device (BiPAP without backup rate)?</p>
+                <label><input type="radio" name="using_e0470" value="yes"> Yes</label>
+                <label><input type="radio" name="using_e0470" value="no"> No</label>
+                <label><input type="radio" name="using_e0470" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Is it charted that OSA and CPAP treatment has been considered and ruled out?</p>
+                <label><input type="radio" name="osa_cpap_ruled_out" value="yes"> Yes</label>
+                <label><input type="radio" name="osa_cpap_ruled_out" value="no"> No</label>
+                <label><input type="radio" name="osa_cpap_ruled_out" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Do you have documentation that COPD does not contribute significantly to the patient's pulmonary limitation? (NMD patients only)</p>
+                <label><input type="radio" name="copd_not_significant" value="yes"> Yes</label>
+                <label><input type="radio" name="copd_not_significant" value="no"> No</label>
+                <label><input type="radio" name="copd_not_significant" value="missing"> Missing</label>
+            </div>
+        </div>
+        
+        <div id="consolidated-data-section">
+            <h2>3. Clinical Data</h2>
+            <div class="question-group">
+                <p>Do you have an Arterial Blood Gas (ABG)?</p>
+                <label><input type="radio" name="has_abg" value="yes"> Yes</label>
+                <label><input type="radio" name="has_abg" value="no"> No</label>
+                <div class="lab-value-input">
+                    <label>Enter pCO₂ value:</label>
+                    <input type="number" name="abg_pco2" step="0.1" min="0"> <span>mmHg</span>
+                </div>
+                <p>Was the ABG drawn awake on prescribed FiO₂?</p>
+                <label><input type="radio" name="abg_fio2" value="yes"> Yes</label>
+                <label><input type="radio" name="abg_fio2" value="no"> No</label>
+                <p>Is the current ABG ≥7 mmHg increase from a previous ABG?</p>
+                <label><input type="radio" name="abg_increase_7" value="yes"> Yes</label>
+                <label><input type="radio" name="abg_increase_7" value="no"> No</label>
+                <label><input type="radio" name="abg_increase_7" value="missing"> Missing</label>
+                <p>Compared to baseline pCO₂, did pCO₂ worsen >7 mmHg while asleep or immediately on wakening?</p>
+                <label><input type="radio" name="abg_sleep_increase_7" value="yes"> Yes</label>
+                <label><input type="radio" name="abg_sleep_increase_7" value="no"> No</label>
+                <label><input type="radio" name="abg_sleep_increase_7" value="missing"> Missing</label>
+                <p>For OHS E0471: Does ABG show pCO₂ worsened >7 mmHg compared to the ABG used to qualify for E0470?</p>
+                <label><input type="radio" name="abg_e0470_comparison" value="yes"> Yes</label>
+                <label><input type="radio" name="abg_e0470_comparison" value="no"> No</label>
+                <label><input type="radio" name="abg_e0470_comparison" value="missing"> Missing</label>
+            </div>
+
+            <div class="question-group">
+                <p>Do you have Spirometry (FVC/PFT)?</p>
+                <label><input type="radio" name="has_fvc" value="yes"> Yes</label>
+                <label><input type="radio" name="has_fvc" value="no"> No</label>
+                <div class="lab-value-input">
+                    <label>Enter FVC value:</label>
+                    <input type="number" name="fvc_percent" step="0.1" min="0" max="100"> <span>%</span>
+                </div>
+                <div class="lab-value-input">
+                    <label>Enter FEV1 value:</label>
+                    <input type="number" name="fev1_percent" step="0.1" min="0" max="100"> <span>%</span>
+                </div>
+                <div class="lab-value-input">
+                    <label>Enter FEV1/FVC ratio:</label>
+                    <input type="number" name="fev1_fvc_ratio" step="0.1" min="0" max="100"> <span>%</span>
+                </div>
+                <p>Is there a PFT with MD interpretation correlating to NMD or TRD?</p>
+                <label><input type="radio" name="pft_interp" value="yes"> Yes</label>
+                <label><input type="radio" name="pft_interp" value="no"> No</label>
+            </div>
+
+            <div class="question-group">
+                <p>Do you have Max Inspiratory Pressure (MIP)?</p>
+                <label><input type="radio" name="has_mip" value="yes"> Yes</label>
+                <label><input type="radio" name="has_mip" value="no"> No</label>
+                <div class="lab-value-input">
+                    <label>Enter MIP value:</label>
+                    <input type="number" name="mip_value" step="0.1" max="0"> <span>cm H₂O</span>
+                </div>
+            </div>
+
+            <div class="question-group">
+                <p>Do you have End-Tidal CO₂ (ETCO₂)?</p>
+                <label><input type="radio" name="has_etco2" value="yes"> Yes</label>
+                <label><input type="radio" name="has_etco2" value="no"> No</label>
+                <p>Is the ETCO₂ greater than 43 mmHg?</p>
+                <label><input type="radio" name="etco2_gt43" value="yes"> Yes</label>
+                <label><input type="radio" name="etco2_gt43" value="no"> No</label>
+                <p>Is the testing 5 minutes or more cumulative?</p>
+                <label><input type="radio" name="etco2_duration" value="yes"> Yes</label>
+                <label><input type="radio" name="etco2_duration" value="no"> No</label>
+            </div>
+
+            <div class="question-group">
+                <p>Do you have Transcutaneous CO₂ (TcCO₂)?</p>
+                <label><input type="radio" name="has_tcco2" value="yes"> Yes</label>
+                <label><input type="radio" name="has_tcco2" value="no"> No</label>
+                <div class="lab-value-input">
+                    <label>Enter TcCO₂ value:</label>
+                    <input type="number" name="tcco2_value" step="0.1" min="0"> <span>mmHg</span>
+                </div>
+            </div>
+
+            <div class="question-group">
+                <p>Do you have a Venous Blood Gas (VBG)?</p>
+                <label><input type="radio" name="has_vbg" value="yes"> Yes</label>
+                <label><input type="radio" name="has_vbg" value="no"> No</label>
+                <div class="lab-value-input">
+                    <label>Enter VBG pCO₂ value:</label>
+                    <input type="number" name="vbg_pco2" step="0.1" min="0"> <span>mmHg</span>
+                </div>
+            </div>
+
+            <div class="question-group">
+                <p>Do you have Sleep Oximetry/PSG testing?</p>
+                <label><input type="radio" name="has_sleep_study" value="yes"> Yes</label>
+                <label><input type="radio" name="has_sleep_study" value="no"> No</label>
+                <p>Was the patient's SpO₂ at 88% or lower for ≥5 minutes?</p>
+                <label><input type="radio" name="spo2_low" value="yes"> Yes</label>
+                <label><input type="radio" name="spo2_low" value="no"> No</label>
+                <label><input type="radio" name="spo2_low" value="missing"> Missing</label>
+                <p>Was the recording time >2 hours?</p>
+                <label><input type="radio" name="recording_time" value="yes"> Yes</label>
+                <label><input type="radio" name="recording_time" value="no"> No</label>
+                <label><input type="radio" name="recording_time" value="missing"> Missing</label>
+                <p>Was the test completed awake on prescribed FiO₂?</p>
+                <label><input type="radio" name="sleep_study_awake_fio2" value="yes"> Yes</label>
+                <label><input type="radio" name="sleep_study_awake_fio2" value="no"> No</label>
+                <label><input type="radio" name="sleep_study_awake_fio2" value="missing"> Missing</label>
+                <p>Was the test done at ≥2 LPM or prescribed FiO₂ (whichever is higher)?</p>
+                <label><input type="radio" name="sleep_study_2lpm_fio2" value="yes"> Yes</label>
+                <label><input type="radio" name="sleep_study_2lpm_fio2" value="no"> No</label>
+                <label><input type="radio" name="sleep_study_2lpm_fio2" value="missing"> Missing</label>
+                <p>Is the AHI <5?</p>
+                <label><input type="radio" name="ahi_low" value="yes"> Yes</label>
+                <label><input type="radio" name="ahi_low" value="no"> No</label>
+                <label><input type="radio" name="ahi_low" value="missing"> Missing</label>
+                <p>Was this done while using E0470 device?</p>
+                <label><input type="radio" name="sleep_study_on_e0470" value="yes"> Yes</label>
+                <label><input type="radio" name="sleep_study_on_e0470" value="no"> No</label>
+                <label><input type="radio" name="sleep_study_on_e0470" value="missing"> Missing</label>
+            </div>
+            
+            <div class="question-group">
+                <p>Is BMI documented?</p>
+                <label><input type="radio" name="bmi_documented" value="yes"> Yes</label>
+                <label><input type="radio" name="bmi_documented" value="no"> No</label>
+                <p>Is the BMI > 30?</p>
+                <label><input type="radio" name="bmi_gt30" value="yes"> Yes</label>
+                <label><input type="radio" name="bmi_gt30" value="no"> No</label>
+                <p>Is the BMI value specifically charted?</p>
+                <label><input type="radio" name="bmi_charted" value="yes"> Yes</label>
+                <label><input type="radio" name="bmi_charted" value="no"> No</label>
+            </div>
+            
+            <div class="question-group">
+                <p>Is Obesity Hypoventilation Syndrome (OHS) the root cause of respiratory failure?</p>
+                <label><input type="radio" name="ohs_cause" value="yes"> Yes</label>
+                <label><input type="radio" name="ohs_cause" value="no"> No</label>
+                <label><input type="radio" name="ohs_cause" value="missing"> Missing</label>
+            </div>
+             <div class="question-group">
+                <p>Are the ventilator settings prescribed or set to protocol?</p>
+                <label><input type="radio" name="settings_type" value="protocol"> Set to Protocol</label>
+                <label><input type="radio" name="settings_type" value="prescribed"> Settings Prescribed</label>
+                <label><input type="radio" name="settings_type" value="missing"> Missing</label>
+                <p>Are the settings valid for the ventilator/mode prescribed (e.g., is Volume Mode used)?</p>
+                <label><input type="radio" name="settings_valid" value="yes"> Yes</label>
+                <label><input type="radio" name="settings_valid" value="no"> No</label>
+                <label><input type="radio" name="settings_valid" value="missing"> Missing</label>
+            </div>
+        </div>
+
+        <div id="final-checklist-section">
+            <h2>4. Final Approval Checklist</h2>
+             <div class="question-group">
+                <p>Chart notes & qualifying test results within 12 months?</p>
+                <label><input type="radio" name="final_1" value="yes"> Yes</label>
+                <label><input type="radio" name="final_1" value="no"> No</label>
+                <label><input type="radio" name="final_1" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Do you have chart notes that the patient was evaluated/treated for the Approved Diagnosis Category?</p>
+                <label><input type="radio" name="final_2" value="yes"> Yes</label>
+                <label><input type="radio" name="final_2" value="no"> No</label>
+                <label><input type="radio" name="final_2" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Chart supports need for ventilator therapy?</p>
+                <label><input type="radio" name="final_3" value="yes"> Yes</label>
+                <label><input type="radio" name="final_3" value="no"> No</label>
+                <label><input type="radio" name="final_3" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Patient needs exceed what a RAD can deliver?</p>
+                <label><input type="radio" name="final_4" value="yes"> Yes</label>
+                <label><input type="radio" name="final_4" value="no"> No</label>
+                <label><input type="radio" name="final_4" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Do you have any Conflicting Documentation?</p>
+                <label><input type="radio" name="final_5" value="yes"> Yes</label>
+                <label><input type="radio" name="final_5" value="no"> No</label>
+                <label><input type="radio" name="final_5" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Do you have any conflicting Use of "BiPAP" vs. "Ventilator"?</p>
+                <label><input type="radio" name="final_6" value="yes"> Yes</label>
+                <label><input type="radio" name="final_6" value="no"> No</label>
+                <label><input type="radio" name="final_6" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Any other terminology conflicts?</p>
+                <label><input type="radio" name="final_7" value="yes"> Yes</label>
+                <label><input type="radio" name="final_7" value="no"> No</label>
+                <label><input type="radio" name="final_7" value="missing"> Missing</label>
+            </div>
+            <div class="question-group">
+                <p>Do the chart notes show the progression of the approved diagnosis throughout the medical record?</p>
+                <label><input type="radio" name="final_8" value="yes"> Yes</label>
+                <label><input type="radio" name="final_8" value="no"> No</label>
+                <label><input type="radio" name="final_8" value="missing"> Missing</label>
+            </div>
+        </div>
+
+        <div id="notes-section">
+            <h2>5. Notes</h2>
+            <div class="question-group">
+                <p>Add any notes to be included in the summary report.</p>
+                <textarea id="notes-input" name="notes-input" placeholder="Enter notes here..."></textarea>
+            </div>
+        </div>
+    </form>
+
+    <div id="controls">
+        <button id="calculate-btn" type="button">📊 Calculate All Pathway Results</button>
+    </div>
+
+    <div id="summary-container" class="hidden">
+        <h3>Summary Snapshot</h3>
+        <div id="summary-snapshot" class="snapshot-container"></div>
+        
+        <h3>Detailed Summary Report</h3>
+        <div id="summary-display"></div>
+        
+        <div id="export-controls" style="display: flex; gap: 1em; margin-top: 2em;">
+            <button id="copy-summary-btn" type="button">Copy Detailed Summary</button>
+            <button id="start-over" type="button">Start Over</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('niv-form');
+    const summaryContainer = document.getElementById('summary-container');
+    const summarySnapshot = document.getElementById('summary-snapshot');
+    const summaryDisplay = document.getElementById('summary-display');
+    const calculateBtn = document.getElementById('calculate-btn');
+    const startOverBtn = document.getElementById('start-over');
+    const copyBtn = document.getElementById('copy-summary-btn');
+    const notesInput = document.getElementById('notes-input');
+
+    // --- Helper Functions ---
+    const getVal = (name) => {
+        const checked = form.querySelector(`input[name="${name}"]:checked`);
+        return checked ? checked.value : null;
+    };
+    const getNum = (name) => {
+        const input = form.querySelector(`input[name="${name}"]`);
+        const val = input ? parseFloat(input.value) : null;
+        return isNaN(val) ? null : val;
+    };
+    const getCheckboxState = (name) => {
+        const checkedBoxes = form.querySelectorAll(`input[name="${name}"]:checked`);
+        return checkedBoxes.length > 0;
+    };
+    const isYes = (name) => getVal(name) === 'yes';
+    const isNo = (name) => getVal(name) === 'no';
+    
+    // --- Comprehensive Evaluation Logic ---
+    function getFullEvaluation() {
+        // Get all values from form
+        const pco2 = getNum('abg_pco2');
+        const fvc = getNum('fvc_percent');
+        const fev1 = getNum('fev1_percent');
+        const fev1_fvc = getNum('fev1_fvc_ratio');
+        const mip = getNum('mip_value');
+        const tcco2 = getNum('tcco2_value');
+        const vbg = getNum('vbg_pco2');
+        const copdSetting = getVal('copd_setting');
+        const patientCharacteristics = getVal('patient_characteristics');
+
+        // Define boolean criteria
+        const baseCriteriaMet = isYes('swo') && isYes('description') && isNo('prn');
+        const finalCriteriaMet = isYes('final_1') && isYes('final_2') && isYes('final_3') && isYes('final_4') && isNo('final_5') && isNo('final_6') && isNo('final_7') && isYes('final_8');
+        const etco2CriterionMet = isYes('has_etco2') && isYes('etco2_gt43') && isYes('etco2_duration');
+        const settingsMet = getVal('settings_type') === 'protocol' || (getVal('settings_type') === 'prescribed' && isYes('settings_valid'));
+        const ohsCriteriaMet = isNo('ohs_cause') || (isYes('ohs_cause') && isYes('bmi_documented') && isYes('bmi_gt30') && isYes('bmi_charted'));
+        
+        // Sleep study criteria
+        const sleepStudyBasic = isYes('has_sleep_study') && isYes('spo2_low') && isYes('recording_time');
+        const sleepStudyAwakeFio2 = sleepStudyBasic && isYes('sleep_study_awake_fio2');
+        const sleepStudy2lpmFio2 = sleepStudyBasic && isYes('sleep_study_2lpm_fio2');
+        const sleepStudyWithAHI = sleepStudyAwakeFio2 && isYes('ahi_low');
+        const sleepStudyOnE0470 = sleepStudyWithAHI && isYes('sleep_study_on_e0470');
+
+        // Current Guidelines qualifying lab criteria (NMD, TRD, Current COPD)
+        const nmdCurrentQualifyingLabMet = (pco2 !== null && pco2 > 45) || (fvc !== null && fvc <= 50 && isYes('pft_interp')) || (mip !== null && mip < -60) || (etco2CriterionMet) || (tcco2 !== null && tcco2 > 50) || (vbg !== null && vbg > 51);
+        const trdCurrentQualifyingLabMet = (pco2 !== null && pco2 > 45) || (fvc !== null && fvc <= 50 && isYes('pft_interp')) || (etco2CriterionMet) || (tcco2 !== null && tcco2 > 50) || (vbg !== null && vbg > 51);
+        
+        // Current COPD Guidelines qualifying lab criteria 
+        const copdCurrentQualifyingLabMet = (pco2 !== null && pco2 > 50) || 
+                                           ((fev1_fvc !== null && fev1_fvc < 70) || (fev1 !== null && fev1 < 50)) ||
+                                           (tcco2 !== null && tcco2 > 50) || (vbg !== null && vbg > 51) || etco2CriterionMet;
+
+        // NEW NCD COPD criteria
+        const copdNcdLabMet = (pco2 !== null && pco2 >= 52 && isYes('abg_fio2'));
+        
+        // BiPAP ST mode check for Current COPD Guidelines
+        const noBipapSt = isNo('bipap_st_mode');
+
+        // PAP Current Guidelines Criteria
+        const nmdPapQualifyingLabMet = (pco2 !== null && pco2 >= 45 && isYes('abg_fio2')) || sleepStudyAwakeFio2 || (mip !== null && mip < -60);
+        const rtdPapQualifyingLabMet = (pco2 !== null && pco2 >= 45 && isYes('abg_fio2')) || sleepStudyAwakeFio2;
+        
+        // OHS E0470/E0471 criteria
+        const ohsE0470RequiredLabsMet = (pco2 !== null && pco2 >= 45 && isYes('abg_fio2')) && (fev1_fvc !== null && fev1_fvc >= 70) && (fev1 !== null && fev1 >= 50);
+        const ohsE0470QualifyingOptionMet = isYes('abg_sleep_increase_7') || sleepStudyWithAHI;
+        const ohsE0471RequiredMet = isYes('using_e0470') && (fev1_fvc !== null && fev1_fvc >= 70);
+        const ohsE0471QualifyingOptionMet = isYes('abg_e0470_comparison') || sleepStudyOnE0470;
+
+        // COPD PAP criteria (multiple scenarios)
+        const copdPapRequiredLabsMet = (pco2 !== null && pco2 >= 52 && isYes('abg_fio2')) && sleepStudy2lpmFio2 && isYes('osa_cpap_ruled_out');
+        const copdPapScenario1RequiredMet = (pco2 !== null && pco2 >= 52 && isYes('abg_fio2')) && isYes('abg_increase_7') && sleepStudyWithAHI;
+        const copdPapScenario2RequiredMet = (pco2 !== null && pco2 >= 52 && isYes('abg_fio2')) && sleepStudy2lpmFio2;
+
+        // Calculate final approval status for each pathway
+        
+        // Current Guidelines (NMD, TRD, Current COPD)
+        const isNmdCurrentApproved = isYes('has_nmd') && baseCriteriaMet && finalCriteriaMet && nmdCurrentQualifyingLabMet && settingsMet;
+        const isTrdCurrentApproved = isYes('has_rtd') && baseCriteriaMet && finalCriteriaMet && trdCurrentQualifyingLabMet && settingsMet && ohsCriteriaMet;
+        const isCopdCurrentApproved = isYes('has_copd') && baseCriteriaMet && finalCriteriaMet && copdCurrentQualifyingLabMet && settingsMet && noBipapSt;
+
+        // NEW NCD COPD Criteria
+        let isCopdNcdNivApproved = false;
+        if (isYes('has_copd') && isYes('copd_crf')) {
+            if (copdSetting === 'inpatient') {
+                isCopdNcdNivApproved = baseCriteriaMet && finalCriteriaMet && isYes('inpatient_rad') && isYes('inpatient_used') && isYes('inpatient_risk') && copdNcdLabMet && settingsMet;
+            } else if (copdSetting === 'outpatient') {
+                isCopdNcdNivApproved = baseCriteriaMet && finalCriteriaMet && copdNcdLabMet && isNo('outpatient_sleep_apnea') && getCheckboxState('outpatient_therapy') && settingsMet;
+            }
+        }
+        const isCopdE0471NcdApproved = baseCriteriaMet && finalCriteriaMet && copdNcdLabMet && isNo('outpatient_sleep_apnea') && (patientCharacteristics === 'stable' || patientCharacteristics === 'post_hospital');
+        const isCopdE0470NcdApproved = baseCriteriaMet && finalCriteriaMet && copdNcdLabMet && isNo('outpatient_sleep_apnea') && isNo('tolerate_high_intensity') && isNo('backup_inappropriate');
+        const isHospitalDischargeRADApproved = baseCriteriaMet && finalCriteriaMet && isYes('has_copd') && isYes('acute_chronic_rf') && isYes('required_rad_predischarge') && isYes('risk_exacerbation');
+
+        // PAP Current Guidelines
+        const isNmdE0470PapApproved = isYes('has_nmd') && nmdPapQualifyingLabMet && isYes('copd_not_significant');
+        const isNmdE0471PapApproved = isYes('has_nmd') && nmdPapQualifyingLabMet && isYes('copd_not_significant');
+        const isRtdE0470PapApproved = isYes('has_rtd') && rtdPapQualifyingLabMet;
+        const isRtdE0471PapApproved = isYes('has_rtd') && rtdPapQualifyingLabMet;
+        const isOhsE0470PapApproved = isYes('has_ohs') && ohsE0470RequiredLabsMet && ohsE0470QualifyingOptionMet;
+        const isOhsE0471PapApproved = isYes('has_ohs') && ohsE0471RequiredMet && ohsE0471QualifyingOptionMet;
+        const isCopdE0470PapApproved = isYes('has_copd') && copdPapRequiredLabsMet;
+        const isCopdE0470Scenario1PapApproved = isYes('has_copd') && copdPapScenario1RequiredMet;
+        const isCopdE0470Scenario2PapApproved = isYes('has_copd') && copdPapScenario2RequiredMet;
+
+        return {
+            // Current Guidelines
+            isNmdCurrentApproved, isTrdCurrentApproved, isCopdCurrentApproved,
+            // NEW NCD Criteria  
+            isCopdNcdNivApproved, isCopdE0471NcdApproved, isCopdE0470NcdApproved, isHospitalDischargeRADApproved,
+            // PAP Current Guidelines
+            isNmdE0470PapApproved, isNmdE0471PapApproved, isRtdE0470PapApproved, isRtdE0471PapApproved,
+            isOhsE0470PapApproved, isOhsE0471PapApproved,
+            isCopdE0470PapApproved, isCopdE0470Scenario1PapApproved, isCopdE0470Scenario2PapApproved,
+            // Supporting details for summary
+            baseCriteriaMet, finalCriteriaMet, settingsMet, ohsCriteriaMet, noBipapSt,
+            nmdCurrentQualifyingLabMet, trdCurrentQualifyingLabMet, copdCurrentQualifyingLabMet, copdNcdLabMet,
+            labValues: { pco2, fvc, fev1, fev1_fvc, mip, tcco2, vbg }
+        };
+    }
+
+    function generateSummarySnapshot(evalResult) {
+        let html = '';
+        
+        // For each pathway, show approval status and what's missing
+        const pathways = [
+            { name: 'NMD NIV (Current Guidelines)', approved: evalResult.isNmdCurrentApproved, diagnosis: 'has_nmd' },
+            { name: 'TRD NIV (Current Guidelines)', approved: evalResult.isTrdCurrentApproved, diagnosis: 'has_rtd' },
+            { name: 'COPD NIV (Current Guidelines)', approved: evalResult.isCopdCurrentApproved, diagnosis: 'has_copd' },
+            { name: 'COPD NIV (NEW NCD Guidelines)', approved: evalResult.isCopdNcdNivApproved, diagnosis: 'has_copd' },
+            { name: 'COPD E0471 (NEW NCD)', approved: evalResult.isCopdE0471NcdApproved, diagnosis: 'has_copd' },
+            { name: 'COPD E0470 (NEW NCD)', approved: evalResult.isCopdE0470NcdApproved, diagnosis: 'has_copd' },
+            { name: 'Hospital RAD (NEW NCD)', approved: evalResult.isHospitalDischargeRADApproved, diagnosis: 'has_copd' },
+            { name: 'NMD E0470/E0471 (PAP Guidelines)', approved: evalResult.isNmdE0470PapApproved, diagnosis: 'has_nmd' },
+            { name: 'RTD E0470/E0471 (PAP Guidelines)', approved: evalResult.isRtdE0470PapApproved, diagnosis: 'has_rtd' },
+            { name: 'OHS E0470 (PAP Guidelines)', approved: evalResult.isOhsE0470PapApproved, diagnosis: 'has_ohs' },
+            { name: 'OHS E0471 (PAP Guidelines)', approved: evalResult.isOhsE0471PapApproved, diagnosis: 'has_ohs' },
+            { name: 'COPD E0470 (PAP Guidelines)', approved: evalResult.isCopdE0470PapApproved, diagnosis: 'has_copd' }
+        ];
+
+        pathways.forEach(pathway => {
+            if (isYes(pathway.diagnosis)) {
+                html += '<div class="snapshot-disease">';
+                html += `<h5>${pathway.name}:</h5>`;
+                html += `<div class="snapshot-device"><span class="${pathway.approved ? 'snapshot-approved' : 'snapshot-not-approved'}">${pathway.approved ? 'APPROVED' : 'NOT APPROVED'}</span></div>`;
+                html += '</div>';
+            }
+        });
+
+        summarySnapshot.innerHTML = html;
+    }
+    
+    function generateSummary() {
+        calculateBtn.textContent = '⏳ Processing...';
+        
+        setTimeout(() => {
+            const evalResult = getFullEvaluation();
+            
+            // Generate snapshot
+            generateSummarySnapshot(evalResult);
+            
+            let html = '';
+
+            const getStatus = (isMet, questionName = null, isCheckboxGroup = false) => {
+                if (isCheckboxGroup) return getCheckboxState(questionName) ? '<span class="summary-answer-good">MET</span>' : '<span class="summary-answer-bad">MISSING</span>';
+                if (questionName && getVal(questionName) === null) return '<span class="summary-answer-bad">MISSING</span>';
+                return isMet ? '<span class="summary-answer-good">MET</span>' : '<span class="summary-answer-bad">NOT MET</span>';
+            };
+
+            const getLabStatus = (isMet, hasLabQuestionName, numericValue = null) => {
+                const hasLabAnswer = getVal(hasLabQuestionName);
+                if (hasLabAnswer === null) return '<span class="summary-answer-bad">MISSING</span>';
+                if (hasLabAnswer === 'no') return '<span class="summary-answer-bad">NOT MET</span>';
+                if (hasLabAnswer === 'yes' && (numericValue === null || isNaN(numericValue))) return '<span class="summary-answer-bad">MISSING</span>';
+                return isMet ? '<span class="summary-answer-good">MET</span>' : '<span class="summary-answer-bad">NOT MET</span>';
+            };
+
+            const getLine = (question, isMet, value = null, questionName = null, isCheckboxGroup = false) => {
+                let line = `<li>${question} - ${getStatus(isMet, questionName, isCheckboxGroup)}`;
+                if (value !== null && !isNaN(value)) line += ` (Value: ${value})`;
+                return line + '</li>';
+            };
+
+            const getLabLine = (question, isMet, value, hasLabQuestionName) => {
+                let line = `<li>${question} - ${getLabStatus(isMet, hasLabQuestionName, value)}`;
+                if (value !== null && !isNaN(value)) line += ` (Value: ${value})`;
+                return line + '</li>';
+            };
+
+            // Generate detailed summary for each pathway with missing items
+            
+            const buildPathwayDetail = (title, approved, requiredItems, qualifyingLabItems = []) => {
+                let html = '<div class="summary-display-group">';
+                html += `<h4>${title}: <span class="${approved ? 'summary-answer-good' : 'summary-answer-bad'}">${approved ? 'APPROVED' : 'NOT APPROVED'}</span></h4>`;
+                html += '<ul>';
+                
+                if (requiredItems.length > 0) {
+                    html += '<div class="summary-sub-header">REQUIRED (All Must Be Met):</div>';
+                    requiredItems.forEach(item => {
+                        html += `<li>${item.label} - <span class="${item.met ? 'summary-answer-good' : 'summary-answer-bad'}">${item.met ? 'MET' : 'MISSING/NOT MET'}</span></li>`;
+                    });
+                }
+                
+                if (qualifyingLabItems.length > 0) {
+                    html += '<div class="summary-sub-header">QUALIFYING LABS (Need At Least One):</div>';
+                    qualifyingLabItems.forEach(item => {
+                        html += `<li>${item.label} - <span class="${item.met ? 'summary-answer-good' : 'summary-answer-bad'}">${item.met ? 'MET' : 'NOT MET'}</span></li>`;
+                    });
+                }
+                
+                html += '</ul></div>';
+                return html;
+            };
+
+            // NMD Current Guidelines
+            if (isYes('has_nmd')) {
+                const nmdRequired = [
+                    { label: 'NMD diagnosis documented', met: isYes('has_nmd') },
+                    { label: 'SWO (Prescription) present', met: isYes('swo') },
+                    { label: 'Detailed item description', met: isYes('description') },
+                    { label: 'Order not PRN/as needed', met: isNo('prn') },
+                    { label: 'Chart supports ventilator therapy need', met: isYes('final_3') },
+                    { label: 'Patient needs exceed RAD capabilities', met: isYes('final_4') },
+                    { label: 'Ventilator settings prescribed/valid', met: evalResult.settingsMet },
+                    { label: 'Final approval checklist complete', met: evalResult.finalCriteriaMet }
+                ];
+                const nmdLabs = [
+                    { label: 'ABG pCO2 > 45 mmHg', met: evalResult.labValues.pco2 !== null && evalResult.labValues.pco2 > 45 },
+                    { label: 'FVC ≤ 50% with MD interpretation', met: evalResult.labValues.fvc !== null && evalResult.labValues.fvc <= 50 && isYes('pft_interp') },
+                    { label: 'MIP < -60 cm H2O', met: evalResult.labValues.mip !== null && evalResult.labValues.mip < -60 },
+                    { label: 'ETCO2 > 43 mmHg (≥5 min)', met: isYes('has_etco2') && isYes('etco2_gt43') && isYes('etco2_duration') },
+                    { label: 'TcCO2 > 50 mmHg', met: evalResult.labValues.tcco2 !== null && evalResult.labValues.tcco2 > 50 },
+                    { label: 'VBG pCO2 > 51 mmHg', met: evalResult.labValues.vbg !== null && evalResult.labValues.vbg > 51 }
+                ];
+                html += buildPathwayDetail('NMD NIV (Current Guidelines)', evalResult.isNmdCurrentApproved, nmdRequired, nmdLabs);
+            }
+
+            // TRD Current Guidelines
+            if (isYes('has_rtd')) {
+                const trdRequired = [
+                    { label: 'RTD diagnosis documented', met: isYes('has_rtd') },
+                    { label: 'SWO (Prescription) present', met: isYes('swo') },
+                    { label: 'Detailed item description', met: isYes('description') },
+                    { label: 'Order not PRN/as needed', met: isNo('prn') },
+                    { label: 'Chart supports ventilator therapy need', met: isYes('final_3') },
+                    { label: 'Patient needs exceed RAD capabilities', met: isYes('final_4') },
+                    { label: 'Ventilator settings prescribed/valid', met: evalResult.settingsMet },
+                    { label: 'OHS criteria met (if OHS is root cause)', met: evalResult.ohsCriteriaMet },
+                    { label: 'Final approval checklist complete', met: evalResult.finalCriteriaMet }
+                ];
+                const trdLabs = [
+                    { label: 'ABG pCO2 > 45 mmHg', met: evalResult.labValues.pco2 !== null && evalResult.labValues.pco2 > 45 },
+                    { label: 'FVC ≤ 50% with MD interpretation', met: evalResult.labValues.fvc !== null && evalResult.labValues.fvc <= 50 && isYes('pft_interp') },
+                    { label: 'ETCO2 > 43 mmHg (≥5 min)', met: isYes('has_etco2') && isYes('etco2_gt43') && isYes('etco2_duration') },
+                    { label: 'TcCO2 > 50 mmHg', met: evalResult.labValues.tcco2 !== null && evalResult.labValues.tcco2 > 50 },
+                    { label: 'VBG pCO2 > 51 mmHg', met: evalResult.labValues.vbg !== null && evalResult.labValues.vbg > 51 }
+                ];
+                html += buildPathwayDetail('TRD NIV (Current Guidelines)', evalResult.isTrdCurrentApproved, trdRequired, trdLabs);
+            }
+
+            // COPD Current Guidelines
+            if (isYes('has_copd')) {
+                const copdCurrentRequired = [
+                    { label: 'COPD diagnosis documented', met: isYes('has_copd') },
+                    { label: 'SWO (Prescription) present', met: isYes('swo') },
+                    { label: 'Detailed item description', met: isYes('description') },
+                    { label: 'Order not PRN/as needed', met: isNo('prn') },
+                    { label: 'Chart supports ventilator therapy need', met: isYes('final_3') },
+                    { label: 'Patient needs exceed RAD capabilities', met: isYes('final_4') },
+                    { label: 'Ventilator settings prescribed/valid', met: evalResult.settingsMet },
+                    { label: 'BiPAP ST mode NOT ordered as primary', met: evalResult.noBipapSt },
+                    { label: 'Final approval checklist complete', met: evalResult.finalCriteriaMet }
+                ];
+                const copdCurrentLabs = [
+                    { label: 'ABG pCO2 > 50 mmHg', met: evalResult.labValues.pco2 !== null && evalResult.labValues.pco2 > 50 },
+                    { label: 'FEV1/FVC < 70%', met: evalResult.labValues.fev1_fvc !== null && evalResult.labValues.fev1_fvc < 70 },
+                    { label: 'FEV1 < 50%', met: evalResult.labValues.fev1 !== null && evalResult.labValues.fev1 < 50 },
+                    { label: 'TcCO2 > 50 mmHg', met: evalResult.labValues.tcco2 !== null && evalResult.labValues.tcco2 > 50 },
+                    { label: 'VBG pCO2 > 51 mmHg', met: evalResult.labValues.vbg !== null && evalResult.labValues.vbg > 51 },
+                    { label: 'ETCO2 > 43 mmHg (≥5 min)', met: isYes('has_etco2') && isYes('etco2_gt43') && isYes('etco2_duration') }
+                ];
+                html += buildPathwayDetail('COPD NIV (Current Guidelines)', evalResult.isCopdCurrentApproved, copdCurrentRequired, copdCurrentLabs);
+
+                // COPD NEW NCD Guidelines
+                const copdNcdRequired = [
+                    { label: 'COPD diagnosis documented', met: isYes('has_copd') },
+                    { label: 'Chronic Respiratory Failure due to COPD', met: isYes('copd_crf') },
+                    { label: 'SWO (Prescription) present', met: isYes('swo') },
+                    { label: 'Detailed item description', met: isYes('description') },
+                    { label: 'Order not PRN/as needed', met: isNo('prn') },
+                    { label: 'Chart supports ventilator therapy need', met: isYes('final_3') },
+                    { label: 'Patient needs exceed RAD capabilities', met: isYes('final_4') },
+                    { label: 'Ventilator settings prescribed/valid', met: evalResult.settingsMet },
+                    { label: 'Final approval checklist complete', met: evalResult.finalCriteriaMet }
+                ];
+
+                if (getVal('copd_setting') === 'inpatient') {
+                    copdNcdRequired.push(
+                        { label: 'Needed capabilities beyond RAD during stay', met: isYes('inpatient_rad') },
+                        { label: 'Used ventilator/RAD in 24h pre-discharge', met: isYes('inpatient_used') },
+                        { label: 'Risk of rapid symptom exacerbation', met: isYes('inpatient_risk') }
+                    );
+                } else if (getVal('copd_setting') === 'outpatient') {
+                    copdNcdRequired.push(
+                        { label: 'Sleep apnea NOT primary cause', met: isNo('outpatient_sleep_apnea') },
+                        { label: 'At least one therapy criterion met', met: getCheckboxState('outpatient_therapy') }
+                    );
+                }
+
+                const copdNcdLabs = [
+                    { label: 'ABG pCO2 ≥ 52 mmHg on prescribed FiO2', met: evalResult.labValues.pco2 !== null && evalResult.labValues.pco2 >= 52 && isYes('abg_fio2') }
+                ];
+                html += buildPathwayDetail('COPD NIV (NEW NCD Guidelines)', evalResult.isCopdNcdNivApproved, copdNcdRequired, copdNcdLabs);
+            }
+
+            // OHS Guidelines
+            if (isYes('has_ohs')) {
+                const ohsE0470Required = [
+                    { label: 'OHS diagnosis documented', met: isYes('has_ohs') },
+                    { label: 'ABG pCO2 ≥ 45 mmHg on prescribed FiO2', met: evalResult.labValues.pco2 !== null && evalResult.labValues.pco2 >= 45 && isYes('abg_fio2') },
+                    { label: 'FEV1/FVC ≥ 70%', met: evalResult.labValues.fev1_fvc !== null && evalResult.labValues.fev1_fvc >= 70 },
+                    { label: 'FEV1 ≥ 50%', met: evalResult.labValues.fev1 !== null && evalResult.labValues.fev1 >= 50 }
+                ];
+                const ohsE0470Options = [
+                    { label: 'PaCO2 worsened >7 mmHg while asleep/on wakening', met: isYes('abg_sleep_increase_7') },
+                    { label: 'PSG with SpO2 ≤ 88% for ≥5 min + AHI < 5', met: isYes('has_sleep_study') && isYes('spo2_low') && isYes('recording_time') && isYes('sleep_study_awake_fio2') && isYes('ahi_low') }
+                ];
+                html += buildPathwayDetail('OHS E0470 (PAP Guidelines)', evalResult.isOhsE0470PapApproved, ohsE0470Required, ohsE0470Options);
+            }
+
+            // Summary of Missing Documentation
+            html += '<div class="summary-display-group">';
+            html += '<h4>SUMMARY: What Documentation to Get from MD</h4>';
+            html += '<ul>';
+            html += '<div class="summary-sub-header">Essential for All Pathways:</div>';
+            if (!isYes('swo')) html += '<li>• SWO (Prescription) documentation</li>';
+            if (!isYes('description')) html += '<li>• Detailed item description in order</li>';
+            if (!isNo('prn')) html += '<li>• Confirm order is not PRN/as needed</li>';
+            if (!isYes('final_3')) html += '<li>• Chart notes supporting ventilator therapy need</li>';
+            if (!isYes('final_4')) html += '<li>• Documentation that patient needs exceed RAD capabilities</li>';
+            
+            html += '<div class="summary-sub-header">Lab Values Needed:</div>';
+            if (!evalResult.labValues.pco2) html += '<li>• ABG with pCO2 value</li>';
+            if (!evalResult.labValues.fvc && !evalResult.labValues.mip) html += '<li>• Spirometry (FVC/PFT) or MIP values</li>';
+            if (isYes('has_copd') && !evalResult.labValues.fev1_fvc) html += '<li>• FEV1/FVC ratio for COPD Current Guidelines</li>';
+            
+            html += '</ul>';
+            html += '</div>';
+
+            // Add notes if present
+            const notes = notesInput.value.trim();
+            if (notes) {
+                html += '<div class="summary-display-group">';
+                html += '<h4>Notes</h4>';
+                html += `<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; white-space: pre-wrap; border: 1px solid #dee2e6;">${notes}</div>`;
+                html += '</div>';
+            }
+
+            summaryDisplay.innerHTML = html;
+            summaryContainer.classList.remove('hidden');
+            summaryContainer.scrollIntoView({ behavior: 'smooth' });
+            calculateBtn.textContent = '📊 Calculate All Pathway Results';
+        }, 800);
+    }
+
+    // Enhanced copy/paste formatting - no special characters, detailed breakdown
+    function generateEnhancedPlainText() {
+        const evalResult = getFullEvaluation();
+        let text = '';
+        
+        text += '========================================\n';
+        text += '   NIV CLINICAL APPROVAL CALCULATOR\n';
+        text += '   DETAILED PATHWAY ANALYSIS\n';
+        text += '========================================\n';
+        text += `Date: ${new Date().toLocaleDateString()}\n`;
+        text += `Time: ${new Date().toLocaleTimeString()}\n\n`;
+        
+        text += 'PATHWAY APPROVAL SUMMARY:\n';
+        text += '=========================\n\n';
+        
+        // Show each applicable pathway with status
+        if (isYes('has_nmd')) {
+            text += `NMD NIV (Current Guidelines): ${evalResult.isNmdCurrentApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `NMD E0470/E0471 (PAP Guidelines): ${evalResult.isNmdE0470PapApproved ? 'APPROVED' : 'NOT APPROVED'}\n\n`;
+        }
+        
+        if (isYes('has_rtd')) {
+            text += `TRD NIV (Current Guidelines): ${evalResult.isTrdCurrentApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `RTD E0470/E0471 (PAP Guidelines): ${evalResult.isRtdE0470PapApproved ? 'APPROVED' : 'NOT APPROVED'}\n\n`;
+        }
+        
+        if (isYes('has_copd')) {
+            text += `COPD NIV (Current Guidelines): ${evalResult.isCopdCurrentApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `COPD NIV (NEW NCD Guidelines): ${evalResult.isCopdNcdNivApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `COPD E0471 (NEW NCD): ${evalResult.isCopdE0471NcdApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `COPD E0470 (NEW NCD): ${evalResult.isCopdE0470NcdApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `Hospital RAD (NEW NCD): ${evalResult.isHospitalDischargeRADApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `COPD E0470 (PAP Guidelines): ${evalResult.isCopdE0470PapApproved ? 'APPROVED' : 'NOT APPROVED'}\n\n`;
+        }
+        
+        if (isYes('has_ohs')) {
+            text += `OHS E0470 (PAP Guidelines): ${evalResult.isOhsE0470PapApproved ? 'APPROVED' : 'NOT APPROVED'}\n`;
+            text += `OHS E0471 (PAP Guidelines): ${evalResult.isOhsE0471PapApproved ? 'APPROVED' : 'NOT APPROVED'}\n\n`;
+        }
+        
+        text += 'DETAILED REQUIREMENTS ANALYSIS:\n';
+        text += '================================\n\n';
+        
+        // Core requirements that apply to all
+        text += 'CORE REQUIREMENTS (All Pathways):\n';
+        text += '----------------------------------\n';
+        text += `SWO (Prescription) Present: ${isYes('swo') ? 'MET' : 'MISSING - Need prescription documentation'}\n`;
+        text += `Detailed Item Description: ${isYes('description') ? 'MET' : 'MISSING - Need "non-invasive ventilator" or "NIV" in order'}\n`;
+        text += `Order Not PRN/As Needed: ${isNo('prn') ? 'MET' : 'MISSING - Order cannot be PRN or as needed'}\n`;
+        text += `Chart Supports Ventilator Need: ${isYes('final_3') ? 'MET' : 'MISSING - Need chart notes supporting ventilator therapy'}\n`;
+        text += `Needs Exceed RAD: ${isYes('final_4') ? 'MET' : 'MISSING - Need documentation that patient needs exceed RAD capabilities'}\n`;
+        text += `Valid Settings: ${evalResult.settingsMet ? 'MET' : 'MISSING - Need proper ventilator settings prescribed'}\n`;
+        
+        if (isYes('has_copd')) {
+            text += `BiPAP ST Mode Check: ${evalResult.noBipapSt ? 'MET' : 'MISSING - BiPAP ST mode cannot be primary setting for COPD Current Guidelines'}\n`;
+        }
+        text += '\n';
+        
+        // Lab requirements
+        text += 'LAB VALUE REQUIREMENTS:\n';
+        text += '-----------------------\n';
+        
+        const labValues = evalResult.labValues;
+        if (labValues.pco2 !== null) {
+            text += `ABG pCO2 Current Value: ${labValues.pco2} mmHg\n`;
+            text += `  - Current Guidelines (>45): ${labValues.pco2 > 45 ? 'MET' : 'NOT MET'}\n`;
+            text += `  - COPD Current Guidelines (>50): ${labValues.pco2 > 50 ? 'MET' : 'NOT MET'}\n`;
+            text += `  - NEW NCD Guidelines (≥52): ${labValues.pco2 >= 52 ? 'MET' : 'NOT MET'}\n`;
+        } else {
+            text += 'ABG pCO2: MISSING - Need arterial blood gas with pCO2 value\n';
+        }
+        
+        if (labValues.fev1_fvc !== null) {
+            text += `FEV1/FVC Ratio: ${labValues.fev1_fvc}% (COPD Current: ${labValues.fev1_fvc < 70 ? 'MET' : 'NOT MET'})\n`;
+        } else if (isYes('has_copd')) {
+            text += 'FEV1/FVC Ratio: MISSING - Need for COPD Current Guidelines\n';
+        }
+        
+        if (labValues.fev1 !== null) {
+            text += `FEV1: ${labValues.fev1}% (COPD Current: ${labValues.fev1 < 50 ? 'MET' : 'NOT MET'})\n`;
+        }
+        
+        if (labValues.fvc !== null) {
+            text += `FVC: ${labValues.fvc}% (Current Guidelines: ${labValues.fvc <= 50 && isYes('pft_interp') ? 'MET' : 'NOT MET'})\n`;
+        }
+        
+        if (labValues.mip !== null) {
+            text += `MIP: ${labValues.mip} cm H2O (Qualifying: ${labValues.mip < -60 ? 'MET' : 'NOT MET'})\n`;
+        }
+        
+        if (labValues.tcco2 !== null) {
+            text += `TcCO2: ${labValues.tcco2} mmHg (Qualifying: ${labValues.tcco2 > 50 ? 'MET' : 'NOT MET'})\n`;
+        }
+        
+        if (labValues.vbg !== null) {
+            text += `VBG pCO2: ${labValues.vbg} mmHg (Qualifying: ${labValues.vbg > 51 ? 'MET' : 'NOT MET'})\n`;
+        }
+        
+        text += `ETCO2 > 43 mmHg (≥5 min): ${isYes('has_etco2') && isYes('etco2_gt43') && isYes('etco2_duration') ? 'MET' : 'NOT MET'}\n\n`;
+        
+        // Summary of what to get from MD
+        text += 'DOCUMENTATION NEEDED FROM MD:\n';
+        text += '==============================\n';
+        
+        const missingItems = [];
+        if (!isYes('swo')) missingItems.push('- SWO (Prescription) documentation');
+        if (!isYes('description')) missingItems.push('- Detailed item description in order');
+        if (!isNo('prn')) missingItems.push('- Confirm order is not PRN/as needed');
+        if (!isYes('final_3')) missingItems.push('- Chart notes supporting ventilator therapy need');
+        if (!isYes('final_4')) missingItems.push('- Documentation that patient needs exceed RAD capabilities');
+        if (!evalResult.labValues.pco2) missingItems.push('- ABG with pCO2 value');
+        if (isYes('has_copd') && !evalResult.labValues.fev1_fvc) missingItems.push('- FEV1/FVC ratio for COPD Current Guidelines');
+        if (!evalResult.labValues.fvc && !evalResult.labValues.mip && !evalResult.labValues.tcco2) missingItems.push('- Additional qualifying labs (Spirometry, MIP, or TcCO2)');
+        
+        if (missingItems.length > 0) {
+            text += 'MISSING ITEMS:\n';
+            missingItems.forEach(item => text += item + '\n');
+        } else {
+            text += 'All core documentation appears complete.\n';
+        }
+        
+        const notes = notesInput.value.trim();
+        if (notes) {
+            text += '\nADDITIONAL NOTES:\n';
+            text += '=================\n';
+            text += notes + '\n';
+        }
+        
+        text += '\n========================================\n';
+        text += 'End of Detailed Analysis\n';
+        text += '========================================';
+        
+        return text;
+    }
+
+    function resetCalculator() {
+        form.reset();
+        notesInput.value = '';
+        summaryContainer.classList.add('hidden');
+        copyBtn.textContent = 'Copy Detailed Summary';
+        calculateBtn.textContent = '📊 Calculate All Pathway Results';
+    }
+
+    // Event Listeners
+    calculateBtn.addEventListener('click', generateSummary);
+    
+    copyBtn.addEventListener('click', () => {
+        const enhancedText = generateEnhancedPlainText();
+        navigator.clipboard.writeText(enhancedText).then(() => { 
+            copyBtn.textContent = 'Copied!'; 
+            setTimeout(() => { copyBtn.textContent = 'Copy Detailed Summary'; }, 2000);
+        });
+    });
+
+    startOverBtn.addEventListener('click', resetCalculator);
+});
+</script>
+
+</body>
+</html>
